@@ -1,2 +1,1 @@
-Hello _beautiful_ world!\\
-And good morning.
+Hello _beautiful_ world!
