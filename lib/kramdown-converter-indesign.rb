@@ -111,7 +111,7 @@ module Kramdown
       end
 
       def convert_br(elem)
-        # newline automatically inserted
+        @icml.break_line
       end
 
       def convert_hr(elem)
@@ -129,7 +129,8 @@ module Kramdown
       end
 
       def convert_text(elem)
-        @icml << elem.value
+        text = elem.value.gsub(/\n/, '')
+        @icml << text unless text.empty?
       end
 
       def convert_entity(elem)
