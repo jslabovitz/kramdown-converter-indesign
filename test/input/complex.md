@@ -25,14 +25,23 @@ Some `code` here.[^1]
 
 ### Sub-subheading
 
-More here:
+A bulleted list here:
 
 - a
 - bulleted
 - list
 
-and:
+and a numbered list:
 
 1. a
 2. numbered
 3. list
+
+and verse:
+
+All the world's a stage,\\
+And all the men and women merely Players;\\
+They have their exits and their entrances,\\
+And one man in his time plays many parts,\\
+His Acts being seven ages.
+{:.verse}

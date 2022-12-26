@@ -11,6 +11,6 @@ But, in a larger sense, we can not dedicate—we can not consecrate—we can not
 Abraham Lincoln[^lincoln] \\
 Gettysburg, Pennsylvania \\
 November 19, 1863
-{:.credit}
+{:.signature}
 
 [^lincoln]: A footnote.
