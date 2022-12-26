@@ -1,5 +1,7 @@
 require 'kramdown'
-require 'nokogiri'
+require 'indesign-icml'
+
+require_relative 'kramdown-converter-indesign/extensions/kramdown'
 
 module Kramdown
 
@@ -11,40 +13,8 @@ module Kramdown
 
       def initialize(root, options)
         super
-        @paragraph_style_group = make_paragraph_styles
-        @character_style_group = make_character_styles
+        @icml = InDesign::ICML.new
         root.setup_tree
-      end
-
-      def make_paragraph_styles
-        base_style = ParagraphStyle.new(name: '$ID/NormalParagraphStyle')
-        group = ParagraphStyleGroup.new(base_style: base_style)
-        group.add_styles(
-          'head1' => {},
-          'head2' => {},
-          'head3' => {},
-          'para' => {},
-          'para first' => { based_on: 'para' },
-          'bul item' => {},
-          'num item' => {},
-          'footnote' => {},
-          'blockquote' => {},
-          'credit' => {},
-        )
-        group
-      end
-
-      def make_character_styles
-        base_style = CharacterStyle.new(name: '$ID/[No character style]')
-        group = CharacterStyleGroup.new(base_style: base_style)
-        group.add_styles(
-          'bold' => { attrs: { FontStyle: 'Bold' } },
-          'italic' => { attrs: { FontStyle: 'Italic' } },
-          'small caps' => { attrs: { Capitalization: 'CapToSmallCap' } },
-          'code' => { attrs: {} },  #FIXME: mono font
-          'footnote ref' => { },   #FIXME: OpenType superior
-        )
-        group
       end
 
       def convert(elem, options={})
@@ -60,8 +30,8 @@ module Kramdown
 
       def convert_children(elem)
         elem.children.each do |e|
-          if e.is_text? && @xml.parent.name != 'Content'
-            build_character(@character_style_group.base_style) { convert(e) }
+          if e.is_text? && !@icml.in_content?
+            @icml.character { convert(e) }
           else
             convert(e)
           end
@@ -69,12 +39,10 @@ module Kramdown
       end
 
       def convert_root(elem)
-        Nokogiri::XML::Builder.new do |xml|
-          @xml = xml
-          build_document do
-            convert_children(elem)
-          end
-        end.doc.to_xml(save_with: 0)
+        @icml.document do
+          convert_children(elem)
+        end
+        @icml.to_xml
       end
 
       def convert_xml_comment(elem)
@@ -90,75 +58,55 @@ module Kramdown
       end
 
       def convert_header(elem)
-        build_paragraph("head#{elem.options[:level]}") { convert_children(elem) }
+        @icml.head(elem.options[:level]) { convert_children(elem) }
       end
 
       def convert_p(elem)
-        style = elem.ial_class \
-          || @next_paragraph_style \
-          || (@previous_paragraph_style && @previous_paragraph_style.name.start_with?('head') && 'para first') \
-          || 'para'
-        build_paragraph(style) { convert_children(elem) }
+        @icml.para(elem.ial_class) { convert_children(elem) }
       end
 
       def convert_blockquote(elem)
-        @next_paragraph_style = 'blockquote'
-        convert_children(elem)
-        @next_paragraph_style = nil
+        @icml.blockquote { convert_children(elem) }
       end
 
       def convert_footnote(elem)
-        build_character('footnote ref', 'Footnote') do
-          convert(elem.value)
-        end
+        @icml.footnote { convert(elem.value) }
       end
 
       def convert_footnote_def(elem)
-        elem.children.each_with_index do |e, i|
-          build_paragraph('footnote') do
-            if i == 0
-              build_character('footnote ref') do
-                @xml.processing_instruction('ACE', '4')
-              end
-            end
-            convert_children(e)
-          end
+        elem.children.each do |e|
+          @icml.footnote_def(e == elem.children.first) { convert_children(e) }
         end
       end
 
       def convert_em(elem)
-        style = case elem.ial_class
+        case elem.ial_class
         when 'sc'
-          'small caps'
+          @icml.small_caps { convert_children(elem) }
         else
-          'italic'
+          @icml.italic { convert_children(elem) }
         end
-        build_character(style) { convert_children(elem) }
       end
 
       def convert_strong(elem)
-        build_character('bold') { convert_children(elem) }
+        @icml.bold { convert_children(elem) }
       end
 
       def convert_codespan(elem)
-        build_character('code') { @xml.text(elem.value) }
+        @icml.code { @icml << elem.value }
       end
 
       def convert_ul(elem)
-        @next_paragraph_style = 'bul item'
-        convert_children(elem)
-        @next_paragraph_style = nil
+        @icml.bul_item { convert_children(elem) }
       end
 
       def convert_ol(elem)
-        @next_paragraph_style = 'num item'
-        convert_children(elem)
-        @next_paragraph_style = nil
+        @icml.num_item { convert_children(elem) }
       end
 
       def convert_li(elem)
         # handled in convert_p
-        @xml.Br
+        @icml.break_line
         convert_children(elem)
       end
 
@@ -168,7 +116,7 @@ module Kramdown
 
       def convert_hr(elem)
         # paragraph_style('section')
-        # @xml.text('* * *')
+        # @icml << '* * *'
       end
 
       def convert_a(elem)
@@ -177,75 +125,23 @@ module Kramdown
       end
 
       def convert_blank(elem)
-        @xml.Br
+        @icml.break_line
       end
 
       def convert_text(elem)
-        @xml.text(elem.value)
+        @icml << elem.value
       end
 
       def convert_entity(elem)
-        @xml << "&#{elem.value.name};"
+        @icml << elem.value.name.to_sym
       end
 
       def convert_smart_quote(elem)
-        text = case elem.value
-        when :lsquo
-          '‘'
-        when :rsquo
-          '’'
-        when :ldquo
-          '“'
-        when :rdquo
-          '”'
-        else
-          raise "Unknown smart quote: #{elem.value.inspect}"
-        end
-        @xml.text(text)
+        @icml << elem.value
       end
 
       def convert_typographic_sym(elem)
-        text = case elem.value
-        when :ndash
-          '–'
-        when :hellip
-          '…'
-        else
-          raise "Unknown typographic symbol: #{elem.value.inspect}"
-        end
-        @xml.text(text)
-      end
-
-      ###
-
-      def build_document(&block)
-        @xml.processing_instruction('aid', 'style="50" type="snippet" readerVersion="6.0" featureSet="513" product="8.0(370)"')
-        @xml.processing_instruction('aid', 'SnippetType="InCopyInterchange"')
-        @xml.Document(DOMVersion: '8.0', Self: 'doc') do
-          @character_style_group.build(@xml)
-          @paragraph_style_group.build(@xml)
-          build_story(&block)
-        end
-      end
-
-      def build_story(&block)
-        @xml.Story(Self: 'story') do
-          @xml.StoryPreference(OpticalMarginAlignment: true, OpticalMarginSize: 12)
-          yield
-        end
-      end
-
-      def build_paragraph(style, &block)
-        style = @paragraph_style_group[style] unless style.kind_of?(Style)
-        @xml.ParagraphStyleRange(AppliedParagraphStyle: style, &block)
-        @previous_paragraph_style = style
-      end
-
-      def build_character(style, sub_name='Content', &block)
-        style = @character_style_group[style] unless style.kind_of?(Style)
-        @xml.CharacterStyleRange(AppliedCharacterStyle: style) do
-          @xml.send(sub_name, &block)
-        end
+        @icml << elem.value
       end
 
     end
@@ -253,8 +149,3 @@ module Kramdown
   end
 
 end
-
-require_relative 'kramdown-converter-indesign/style'
-require_relative 'kramdown-converter-indesign/style_group'
-require_relative 'kramdown-converter-indesign/extensions/kramdown'
-require_relative 'kramdown-converter-indesign/extensions/nokogiri'
