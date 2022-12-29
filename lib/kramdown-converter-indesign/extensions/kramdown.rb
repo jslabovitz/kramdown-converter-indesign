@@ -11,6 +11,11 @@ module Kramdown
       @children.each { |e| e.setup_tree(self) }
     end
 
+    def print_tree
+      puts self
+      @children.each { |child| child.print_tree }
+    end
+
     def previous
       if (i = index) && i > 0
         @parent.children[i - 1]
