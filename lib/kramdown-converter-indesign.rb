@@ -29,13 +29,7 @@ module Kramdown
       end
 
       def convert_children(elem)
-        elem.children.each do |e|
-          if e.is_text? && !@icml.in_content?
-            @icml.character { convert(e) }
-          else
-            convert(e)
-          end
-        end
+        elem.children.each { |e| convert(e) }
       end
 
       def convert_root(elem)
@@ -129,8 +123,7 @@ module Kramdown
       end
 
       def convert_text(elem)
-        text = elem.value.gsub(/\n/, '')
-        @icml << text unless text.empty?
+        @icml << elem.value.gsub(/\n/, '')
       end
 
       def convert_entity(elem)
