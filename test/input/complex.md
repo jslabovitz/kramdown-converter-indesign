@@ -37,6 +37,18 @@ and a numbered list:
 2. numbered
 3. list
 
+and a definition list:
+
+foo
+: bar, _zot_
+
+zot _xux_
+: 'grotz'
+
+freeble
+: frabchick --\\
+zrabrik
+
 and verse:
 
 All the world's a stage,\\

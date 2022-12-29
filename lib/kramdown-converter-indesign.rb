@@ -104,6 +104,23 @@ module Kramdown
         convert_children(elem)
       end
 
+      def convert_dl(elem)
+        # ;;elem.print_tree
+        @icml.definition_list do
+          children = elem.children.dup
+          until children.empty?
+            dt, dd = children.shift, children.shift
+            if dd.children.length == 1 && (p = dd.children.first).type == :p
+              dd = p
+            end
+            dt.children.each { |e| convert(e) }
+            @icml.add_tab
+            dd.children.each { |e| convert(e) }
+            @icml.break_line
+          end
+        end
+      end
+
       def convert_br(elem)
         @icml.break_line
       end
