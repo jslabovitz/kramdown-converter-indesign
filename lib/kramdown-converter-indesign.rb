@@ -36,7 +36,7 @@ module Kramdown
         @icml.document do
           convert_children(elem)
         end
-        @icml.to_xml
+        @icml.to_xml(format: options[:format])
       end
 
       def convert_xml_comment(elem)
