@@ -52,7 +52,7 @@ module Kramdown
       end
 
       def convert_header(elem)
-        @icml.head(elem.options[:level]) { convert_children(elem) }
+        @icml.head(elem.options[:level], elem.ial_class) { convert_children(elem) }
       end
 
       def convert_p(elem)
