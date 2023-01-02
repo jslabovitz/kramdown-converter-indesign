@@ -33,7 +33,7 @@ module Kramdown
       end
 
       def convert_root(elem)
-        @icml.document do
+        @icml.story do
           convert_children(elem)
         end
         @icml.to_xml(format: options[:format])
