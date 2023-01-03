@@ -113,9 +113,13 @@ module Kramdown
             if dd.children.length == 1 && (p = dd.children.first).type == :p
               dd = p
             end
-            dt.children.each { |e| convert(e) }
+            @icml.character('dt') do
+              dt.children.each { |e| convert(e) }
+            end
             @icml.add_tab
-            dd.children.each { |e| convert(e) }
+            @icml.character('dd') do
+              dd.children.each { |e| convert(e) }
+            end
             @icml.break_line
           end
         end
