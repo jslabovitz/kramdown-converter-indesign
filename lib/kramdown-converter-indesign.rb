@@ -147,7 +147,9 @@ module Kramdown
       end
 
       def convert_text(elem)
-        @icml << elem.value.gsub(/\n/, '')
+        @icml << elem.value \
+          .gsub(/\n/, '')
+          .gsub(%r{(\d+) (\d+/\d+)}, "\\1\u2009\\2")    # THIN SPACE
       end
 
       def convert_entity(elem)
