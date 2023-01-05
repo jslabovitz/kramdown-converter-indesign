@@ -44,8 +44,11 @@ module Kramdown
       end
 
       def convert_html_element(elem)
-        if elem.value == 'a'
+        case elem.value
+        when 'a'
           convert_a(elem)
+        when 'br'
+          convert_br(elem)
         else
           raise Error, "Unsupported HTML element: <#{elem.value}>"
         end
@@ -126,7 +129,7 @@ module Kramdown
       end
 
       def convert_br(elem)
-        @icml.break_line
+        @icml << "\u2028"     # line separarator
       end
 
       def convert_hr(elem)
