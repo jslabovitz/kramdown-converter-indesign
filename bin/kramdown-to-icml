@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+require 'kramdown-converter-indesign'
+
+if ARGV.empty?
+  input = STDIN.read
+else
+  input = ARGV.map { |arg| File.read(arg) }.join("\n\n")
+end
+
+output = Kramdown::Document.new(input).to_indesign
+
+print output
