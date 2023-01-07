@@ -21,7 +21,7 @@ module Kramdown
 # ;;puts elem
         begin
           method_name = "convert_#{elem.type}"
-          raise Error, "Can't convert element" unless respond_to?(method_name)
+          raise Error, "Can't convert element: #{elem.type}" unless respond_to?(method_name)
           send(method_name, elem)
         rescue Error => e
           raise Error, "#{e} (type: #{elem.type.inspect}, value: #{elem.value.inspect}, location: #{elem.options[:location]})"
