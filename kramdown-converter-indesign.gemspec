@@ -14,6 +14,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
   s.require_path  = 'lib'
 
+  s.add_dependency 'indesign-rb', '~> 0.1'
   s.add_dependency 'kramdown', '~> 2.4'
   s.add_dependency 'nokogiri', '~> 1.13'
 

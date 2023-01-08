@@ -1,5 +1,5 @@
 require 'kramdown'
-require 'indesign-icml'
+require 'indesign'
 
 require_relative 'kramdown-converter-indesign/extensions/kramdown'
 
