@@ -13,7 +13,6 @@ module Kramdown
 
       def initialize(root, options)
         super
-        @icml = InDesign::ICML.new
         root.setup_tree
       end
 
@@ -33,10 +32,12 @@ module Kramdown
       end
 
       def convert_root(elem)
-        @icml.story do
+        icml = InDesign::ICML.new
+        icml.story do |story|
+          @story = story
           convert_children(elem)
         end
-        @icml.to_xml(format: options[:format])
+        icml.to_xml(format: options[:format])
       end
 
       def convert_xml_comment(elem)
@@ -55,86 +56,86 @@ module Kramdown
       end
 
       def convert_header(elem)
-        @icml.head(elem.options[:level], elem.ial_class) { convert_children(elem) }
+        @story.head(elem.options[:level], elem.ial_class) { convert_children(elem) }
       end
 
       def convert_p(elem)
-        @icml.para(elem.ial_class) { convert_children(elem) }
+        @story.para(elem.ial_class) { convert_children(elem) }
       end
 
       def convert_blockquote(elem)
-        @icml.blockquote { convert_children(elem) }
+        @story.blockquote { convert_children(elem) }
       end
 
       def convert_footnote(elem)
-        @icml.footnote { convert(elem.value) }
+        @story.footnote { convert(elem.value) }
       end
 
       def convert_footnote_def(elem)
         elem.children.each do |e|
-          @icml.footnote_def(e == elem.children.first) { convert_children(e) }
+          @story.footnote_def(e == elem.children.first) { convert_children(e) }
         end
       end
 
       def convert_em(elem)
         case elem.ial_class
         when 'sc'
-          @icml.small_caps { convert_children(elem) }
+          @story.small_caps { convert_children(elem) }
         else
-          @icml.italic { convert_children(elem) }
+          @story.italic { convert_children(elem) }
         end
       end
 
       def convert_strong(elem)
-        @icml.bold { convert_children(elem) }
+        @story.bold { convert_children(elem) }
       end
 
       def convert_codespan(elem)
-        @icml.code { @icml << elem.value }
+        @story.code { @story << elem.value }
       end
 
       def convert_ul(elem)
-        @icml.bul_item { convert_children(elem) }
+        @story.bul_item { convert_children(elem) }
       end
 
       def convert_ol(elem)
-        @icml.num_item { convert_children(elem) }
+        @story.num_item { convert_children(elem) }
       end
 
       def convert_li(elem)
         # handled in convert_p
-        @icml.break_line
+        @story.break_line
         convert_children(elem)
       end
 
       def convert_dl(elem)
         # ;;elem.print_tree
-        @icml.definition_list do
+        @story.definition_list do
           children = elem.children.dup
           until children.empty?
             dt, dd = children.shift, children.shift
             if dd.children.length == 1 && (p = dd.children.first).type == :p
               dd = p
             end
-            @icml.character('dt') do
+            @story.character('dt') do
               dt.children.each { |e| convert(e) }
             end
-            @icml.add_tab
-            @icml.character('dd') do
+            @story.add_tab
+            @story.character('dd') do
               dd.children.each { |e| convert(e) }
             end
-            @icml.break_line
+            @story.break_line
           end
         end
       end
 
       def convert_br(elem)
-        @icml << "\u2028"     # line separarator
+        @story << "\u2028"     # line separarator
       end
 
       def convert_hr(elem)
         # paragraph_style('section')
-        # @icml << '* * *'
+        # @story << '* * *'
       end
 
       def convert_a(elem)
@@ -143,25 +144,25 @@ module Kramdown
       end
 
       def convert_blank(elem)
-        @icml.break_line
+        @story.break_line
       end
 
       def convert_text(elem)
-        @icml << elem.value \
+        @story << elem.value \
           .gsub(/\n/, '')
           .gsub(%r{(\d+) (\d+/\d+)}, "\\1\u2009\\2")    # THIN SPACE
       end
 
       def convert_entity(elem)
-        @icml << elem.value.name.to_sym
+        @story << elem.value.name.to_sym
       end
 
       def convert_smart_quote(elem)
-        @icml << elem.value
+        @story << elem.value
       end
 
       def convert_typographic_sym(elem)
-        @icml << elem.value
+        @story << elem.value
       end
 
     end
