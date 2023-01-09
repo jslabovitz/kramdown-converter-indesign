@@ -2,6 +2,7 @@ require 'kramdown'
 require 'indesign'
 
 require_relative 'kramdown-converter-indesign/extensions/kramdown'
+require_relative 'kramdown-converter-indesign/extensions/kramdown-options'
 
 module Kramdown
 
@@ -32,12 +33,24 @@ module Kramdown
       end
 
       def convert_root(elem)
-        icml = InDesign::ICML.new
-        icml.story do |story|
-          @story = story
-          convert_children(elem)
+        if (input_file = options[:indesign_idml_input]) && !input_file.empty?
+          output_file = options[:indesign_idml_output]
+          raise "Must specify --indesign-idml-output with output file" if output_file.empty?
+          idml = InDesign::IDML.load(input_file)
+          @story = InDesign::Story.new
+          @story.build { convert_children(elem) }
+          story_id = options[:indesign_idml_story_id]
+          story_id = idml.story_ids.first if story_id.empty?
+          idml.replace_story(story_id, @story)
+          idml.save(output_file)
+        else
+          icml = InDesign::ICML.new
+          icml.story do |story|
+            @story = story
+            convert_children(elem)
+          end
+          icml.to_xml(format: options[:format])
         end
-        icml.to_xml(format: options[:format])
       end
 
       def convert_xml_comment(elem)
