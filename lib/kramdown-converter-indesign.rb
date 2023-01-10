@@ -10,8 +10,6 @@ module Kramdown
 
     class Indesign < Base
 
-      class Error < StandardError; end
-
       def initialize(root, options)
         super
         root.setup_tree
@@ -20,9 +18,9 @@ module Kramdown
       def convert(elem, options={})
 # ;;puts elem
         begin
-          method_name = "convert_#{elem.type}"
-          raise Error, "Can't convert element: #{elem.type}" unless respond_to?(method_name)
-          send(method_name, elem)
+          send("convert_#{elem.type}", elem)
+        rescue NoMethodError => e
+          raise Error, "Can't convert element: #{elem.type} (location: #{elem.options[:location]})"
         rescue Error => e
           raise Error, "#{e} (type: #{elem.type.inspect}, value: #{elem.value.inspect}, location: #{elem.options[:location]})"
         end
