@@ -106,11 +106,21 @@ module Kramdown
       end
 
       def convert_ul(elem)
-        @story.bul_item { convert_children(elem) }
+        elem.children.each_with_index do |e, i|
+          @story.break_line unless i == 0
+          @story.bul_item do
+            convert_children(e.children.first)
+          end
+        end
       end
 
       def convert_ol(elem)
-        @story.num_item { convert_children(elem) }
+        elem.children.each_with_index do |e, i|
+          @story.break_line unless i == 0
+          @story.num_item do
+            convert_children(e.children.first)
+          end
+        end
       end
 
       def convert_li(elem)
