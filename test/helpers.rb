@@ -5,9 +5,14 @@ require 'kramdown-converter-indesign'
 
 class Test < MiniTest::Test
 
-  def convert(input)
-    @doc = Kramdown::Document.new(File.read(input), format: true)
-    @output = @doc.to_indesign
+  def convert(*files)
+    icml = nil
+    files.each do |file|
+      input = File.read(file).strip
+      input += "\n\n" unless file == files[-1]
+      icml = Kramdown::Document.new(input, indesign_append_to_icml: icml).to_indesign
+    end
+    @output = icml.to_s
     FileUtils.mkpath("test/output")
     File.write("test/output/#{self.class}_#{name}.icml", @output)
   end
