@@ -43,13 +43,22 @@ module Kramdown
           story_id = idml.story_ids.first if story_id.empty?
           idml.replace_story(story_id, @story)
           idml.save(output_file)
+          true
         else
-          icml = InDesign::ICML.new
-          icml.story do |story|
+          base_icml = options[:indesign_append_to_icml]
+          icml = InDesign::ICML.new(
+            paragraph_style_group: base_icml&.paragraph_style_group,
+            character_style_group: base_icml&.character_style_group)
+          icml.build_story do |story|
             @story = story
             convert_children(elem)
           end
-          icml.to_xml(format: options[:format])
+          if base_icml
+            base_icml.append(icml)
+            base_icml
+          else
+            icml
+          end
         end
       end
 
