@@ -17,10 +17,12 @@ module Kramdown
 
       def convert(elem, options={})
 # ;;puts elem
-        begin
-          send("convert_#{elem.type}", elem)
-        rescue NoMethodError => e
+        method = "convert_#{elem.type}"
+        unless respond_to?(method)
           raise Error, "Can't convert element: #{elem.type} (location: #{elem.options[:location]})"
+        end
+        begin
+          send(method, elem)
         rescue Error => e
           raise Error, "#{e} (type: #{elem.type.inspect}, value: #{elem.value.inspect}, location: #{elem.options[:location]})"
         end
