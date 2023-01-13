@@ -10,6 +10,26 @@ module Kramdown
 
     class Indesign < Base
 
+      def self.convert_files(files, styles=nil)
+        paragraph_style_group = InDesign::ParagraphStyleGroup.new(styles)
+        character_style_group = InDesign::CharacterStyleGroup.new
+        icml = nil
+        files.each do |file|
+          input = File.read(file)
+          environment = input.sub!(/^Environment:\s+(.*?)$/i, '') ? $1 : nil
+          input.strip!
+          input += "\n\n" unless file == files[-1]
+          options = {
+            indesign_icml: icml,
+            indesign_environment: environment,
+            indesign_paragraph_style_group: paragraph_style_group,
+            indesign_character_style_group: character_style_group,
+          }
+          icml = Document.new(input, options).to_indesign
+        end
+        icml
+      end
+
       def initialize(root, options)
         super
         root.setup_tree
@@ -33,32 +53,19 @@ module Kramdown
       end
 
       def convert_root(elem)
-        if (input_file = options[:indesign_idml_input]) && !input_file.empty?
-          output_file = options[:indesign_idml_output]
-          raise "Must specify --indesign-idml-output with output file" if output_file.empty?
-          idml = InDesign::IDML.load(input_file)
-          @story = InDesign::Story.new
-          @story.build { convert_children(elem) }
-          story_id = options[:indesign_idml_story_id]
-          story_id = idml.story_ids.first if story_id.empty?
-          idml.replace_story(story_id, @story)
-          idml.save(output_file)
-          true
+        environment = (e = options[:indesign_environment].to_s).empty? ? nil : e
+        icml = InDesign::ICML.new(
+          paragraph_style_group: options[:indesign_paragraph_style_group],
+          character_style_group: options[:indesign_character_style_group])
+        icml.build_story(environment: environment) do |story|
+          @story = story
+          convert_children(elem)
+        end
+        if (base_icml = options[:indesign_icml])
+          base_icml.append(icml)
+          base_icml
         else
-          base_icml = options[:indesign_append_to_icml]
-          icml = InDesign::ICML.new(
-            paragraph_style_group: base_icml&.paragraph_style_group,
-            character_style_group: base_icml&.character_style_group)
-          icml.build_story do |story|
-            @story = story
-            convert_children(elem)
-          end
-          if base_icml
-            base_icml.append(icml)
-            base_icml
-          else
-            icml
-          end
+          icml
         end
       end
 

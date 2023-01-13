@@ -7,7 +7,6 @@ class TestSimple < Test
   end
 
   def test_build
-    # ;;puts @output
     assert_xml
   end
 

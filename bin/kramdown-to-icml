@@ -1,13 +1,22 @@
 #!/usr/bin/env ruby
 
 require 'kramdown-converter-indesign'
+require 'yaml'
 
-icml = nil
+styles = {}
+output = STDOUT
 
-ARGV.each do |arg|
-  input = File.read(arg).strip
-  input += "\n\n" unless arg == ARGV[-1]
-  icml = Kramdown::Document.new(input, indesign_append_to_icml: icml).to_indesign
+while ARGV.first.start_with?('--')
+  case (opt = ARGV.shift)
+  when '--styles'
+    styles = YAML.load(File.read(ARGV.shift))
+  when '--output'
+    output = File.open(ARGV.shift, 'w')
+  else
+    raise
+  end
 end
 
-print icml
+output.write(
+  Kramdown::Converter::Indesign.convert_files(ARGV, styles)
+)
