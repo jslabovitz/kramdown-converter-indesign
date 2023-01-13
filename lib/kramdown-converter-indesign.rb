@@ -196,7 +196,6 @@ module Kramdown
       end
 
       def convert_li(elem)
-        # handled in convert_p
         @story.break_line
         convert_children(elem)
       end
@@ -243,7 +242,7 @@ module Kramdown
       def convert_text(elem)
         @story << elem.value \
           .gsub(/\n/, '')
-          .gsub(%r{(\d+) (\d+/\d+)}, "\\1\u2009\\2")    # THIN SPACE
+          .gsub(%r{(\d+) (\d+/\d+)}, "\\1\u2009\\2")    # THIN SPACE between fraction whole number and fraction
       end
 
       def convert_entity(elem)
