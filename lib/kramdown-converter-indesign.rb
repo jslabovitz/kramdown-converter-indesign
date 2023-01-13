@@ -10,9 +10,35 @@ module Kramdown
 
     class Indesign < Base
 
-      def self.convert_files(files, styles=nil)
-        paragraph_style_group = InDesign::ParagraphStyleGroup.new(styles)
-        character_style_group = InDesign::CharacterStyleGroup.new
+      DefaultParagraphStyleDefs = {
+        'head1' => nil,
+        'head2' => nil,
+        'head3' => nil,
+        'para' => nil,
+        'para first' => { base: 'para' },
+        'bul item' => nil,
+        'num item' => nil,
+        'footnote' => nil,
+        'blockquote' => nil,
+        'verse' => nil,
+        'telegram' => { base: 'verse' },
+        'signature' => nil,
+        'def list' => nil,
+      }
+      DefaultCharacterStyleDefs = {
+        'bold' => { FontStyle: 'Bold' },
+        'italic' => { FontStyle: 'Italic' },
+        'small caps' => { Capitalization: 'CapToSmallCap' },
+        'fraction' => { OTFFraction: true },
+        'code' => nil,  #FIXME: mono font
+        'footnote ref' => { Position: 'OTSuperscript' },
+        'dt' => nil,
+        'dd' => nil,
+      }
+
+      def self.convert_files(files, styles={})
+        paragraph_style_group = InDesign::ParagraphStyleGroup.new(DefaultParagraphStyleDefs.merge(styles))
+        character_style_group = InDesign::CharacterStyleGroup.new(DefaultCharacterStyleDefs)
         icml = nil
         files.each do |file|
           input = File.read(file)
@@ -85,48 +111,76 @@ module Kramdown
       end
 
       def convert_header(elem)
-        @story.head(elem.options[:level], elem.ial_class) { convert_children(elem) }
+        style = "head#{elem.options[:level]}"
+        style += "-#{elem.ial_class}" if elem.ial_class
+        @story.paragraph(style) do
+          convert_children(elem)
+        end
       end
 
       def convert_p(elem)
-        @story.para(elem.ial_class) { convert_children(elem) }
+        style_name =
+          elem.ial_class ||
+          (@story.previous_paragraph_style && @story.previous_paragraph_style.name.start_with?('head') && 'para first') || \
+          'para'
+        @story.paragraph(style_name) do
+          convert_children(elem)
+        end
       end
 
       def convert_blockquote(elem)
-        @story.blockquote { convert_children(elem) }
+        @story.paragraph('blockquote') do
+          convert_children(elem)
+        end
       end
 
       def convert_footnote(elem)
-        @story.footnote { convert(elem.value) }
+        @story.character('footnote ref', 'Footnote') do
+          convert(elem.value)
+        end
       end
 
       def convert_footnote_def(elem)
         elem.children.each do |e|
-          @story.footnote_def(e == elem.children.first) { convert_children(e) }
+          @story.paragraph('footnote') do
+            if e == elem.children.first
+              @story.character('footnote ref') { @story.add_footnote_ref }
+            end
+            convert_children(e)
+          end
         end
       end
 
       def convert_em(elem)
-        case elem.ial_class
+        style = case elem.ial_class
+        when nil
+          'italic'
         when 'sc'
-          @story.small_caps { convert_children(elem) }
+          'small caps'
         else
-          @story.italic { convert_children(elem) }
+          elem.ial_class
+        end
+        @story.character(style) do
+          convert_children(elem)
         end
       end
 
       def convert_strong(elem)
-        @story.bold { convert_children(elem) }
+        @story.character('bold') do
+          convert_children(elem)
+        end
       end
 
       def convert_codespan(elem)
-        @story.code { @story << elem.value }
+        @story.character('code') do
+          @story << elem.value
+        end
       end
 
       def convert_ul(elem)
         elem.children.each_with_index do |e, i|
           @story.break_line unless i == 0
-          @story.bul_item do
+          @story.paragraph('bul item') do
             convert_children(e.children.first)
           end
         end
@@ -135,7 +189,7 @@ module Kramdown
       def convert_ol(elem)
         elem.children.each_with_index do |e, i|
           @story.break_line unless i == 0
-          @story.num_item do
+          @story.paragraph('num item') do
             convert_children(e.children.first)
           end
         end
@@ -149,7 +203,7 @@ module Kramdown
 
       def convert_dl(elem)
         # ;;elem.print_tree
-        @story.definition_list do
+        @story.paragraph('def list') do
           children = elem.children.dup
           until children.empty?
             dt, dd = children.shift, children.shift
