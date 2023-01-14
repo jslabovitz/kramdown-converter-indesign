@@ -112,7 +112,6 @@ module Kramdown
 
       def convert_header(elem)
         style = "head#{elem.options[:level]}"
-        style += "-#{elem.ial_class}" if elem.ial_class
         @story.paragraph(style) do
           convert_children(elem)
         end
