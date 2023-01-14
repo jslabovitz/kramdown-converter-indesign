@@ -128,8 +128,13 @@ module Kramdown
       end
 
       def convert_blockquote(elem)
-        @story.paragraph('blockquote') do
-          convert_children(elem)
+        elem.children.each do |e|
+          unless e.children.empty?
+            @story.paragraph('blockquote') do
+              convert_children(e)
+            end
+            @story.break_line
+          end
         end
       end
 
