@@ -23,6 +23,7 @@ module Kramdown
         'verse' => { base: 'blockquote' },
         'signature' => nil,
         'def list' => nil,
+        'section' => nil,
       }
       DefaultCharacterStyleDefs = {
         'bold' => { FontStyle: 'Bold' },
@@ -225,8 +226,7 @@ module Kramdown
       end
 
       def convert_hr(elem)
-        # paragraph_style('section')
-        # @story << '* * *'
+        @story.paragraph('section')
       end
 
       def convert_a(elem)
