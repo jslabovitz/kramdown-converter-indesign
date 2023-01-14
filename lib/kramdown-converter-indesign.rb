@@ -142,7 +142,7 @@ module Kramdown
       def convert_footnote_def(elem)
         elem.children.each do |e|
           @story.paragraph('footnote') do
-            if e == elem.children.first
+            if e.is_first_child?
               @story.character('footnote ref') { @story.add_footnote_ref }
             end
             convert_children(e)
@@ -177,8 +177,8 @@ module Kramdown
       end
 
       def convert_ul(elem)
-        elem.children.each_with_index do |e, i|
-          @story.break_line unless i == 0
+        elem.children.each do |e|
+          @story.break_line unless e.is_first_child?
           @story.paragraph('bul item') do
             convert_children(e.children.first)
           end
@@ -186,8 +186,8 @@ module Kramdown
       end
 
       def convert_ol(elem)
-        elem.children.each_with_index do |e, i|
-          @story.break_line unless i == 0
+        elem.children.each do |e|
+          @story.break_line unless e.is_first_child?
           @story.paragraph('num item') do
             convert_children(e.children.first)
           end

@@ -46,6 +46,10 @@ module Kramdown
       TEXT_TYPES.include?(@type)
     end
 
+    def is_first_child?
+      self == @parent.children.first
+    end
+
     def to_s
       "* %s%s <%p> (%s)" % [
         "\t" * (@level || 0),
