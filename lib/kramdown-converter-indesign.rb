@@ -20,8 +20,7 @@ module Kramdown
         'num item' => nil,
         'footnote' => nil,
         'blockquote' => nil,
-        'verse' => nil,
-        'telegram' => { base: 'verse' },
+        'verse' => { base: 'blockquote' },
         'signature' => nil,
         'def list' => nil,
       }
