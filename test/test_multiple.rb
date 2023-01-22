@@ -3,6 +3,7 @@ require_relative 'helpers'
 class TestMultiple < Test
 
   def setup
+    super
     convert(*Dir.glob('test/input/multiple-*.md'))
   end
 

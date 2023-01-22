@@ -5,11 +5,22 @@ require 'kramdown-converter-indesign'
 
 class Test < MiniTest::Test
 
-  def convert(*files)
-    @output = Kramdown::Converter::Indesign.convert_files(files)
+  InputDir = Path.new('test/input')
+  OutputDir = Path.new('test/output')
+
+  def setup
+    OutputDir.mkpath unless OutputDir.exist?
+  end
+
+  def output_path(extension)
+    (OutputDir / "#{self.class.to_s.split('::').last}-#{name}").add_extension(extension)
+  end
+
+  def convert(*files, **params)
+    @output = Kramdown::Converter::Indesign.convert_files(files, **params)
     # ;;puts @output
-    FileUtils.mkpath("test/output")
-    File.write("test/output/#{self.class}_#{name}.icml", @output)
+    @output_file = output_path('.icml')
+    @output_file.write(@output)
   end
 
   def assert_xml
