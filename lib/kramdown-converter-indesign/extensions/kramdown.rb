@@ -47,7 +47,7 @@ module Kramdown
     end
 
     def is_first_child?
-      self == @parent.children.first
+      self == @parent&.children&.first
     end
 
     def to_s
