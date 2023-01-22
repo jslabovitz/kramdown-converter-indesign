@@ -5,11 +5,15 @@
 
 ## SOON -- improvements
 
-- find comprehensive test input document
+- treat some elements as environments:
+    - blockquote, footnote, dl, ul/ol?
+    - don't assume all elements under, eg, blockquote are paragraphs
+    - define li (different for ul/ol)
 
-- make correct elements for <a> link
+- combine current input files into single comprehensive test
+
+- make correct elements for <a> link?
 
 
 ## LATER -- features
 
-- allow custom styles to be specified to converter (via options)
