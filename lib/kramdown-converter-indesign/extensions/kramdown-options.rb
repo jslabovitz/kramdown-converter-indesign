@@ -8,7 +8,9 @@ module Kramdown
       Default: nil
       Used by: indesign
     EOF
-      raise Kramdown::Error, "Must provide InDesign::ICML object: #{val.class}" if val && !val.kind_of?(InDesign::ICML)
+      if val && !val.kind_of?(InDesign::ICML)
+        raise Kramdown::Error, "Must provide InDesign::ICML object: #{val.class}"
+      end
       val
     end
 
