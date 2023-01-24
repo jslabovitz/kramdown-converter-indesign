@@ -1,4 +1,3 @@
-# Hello <br>_beautiful_<br>world!
+# Hello _beautiful_ world!
 
-Here \\
-there
+Here and there.

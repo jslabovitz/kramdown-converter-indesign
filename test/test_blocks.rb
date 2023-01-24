@@ -1,10 +1,9 @@
 require_relative 'helpers'
 
-class TestMultiple < Test
+class TestBlocks < Test
 
   def setup
-    super
-    convert(*Dir.glob('test/input/multiple-*.md'))
+    convert('test/input/blocks.md')
   end
 
   def test_build
