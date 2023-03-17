@@ -123,10 +123,13 @@ module Kramdown
         if elem.options[:transparent]
           convert_children(elem)
         else
-          style =
-            elem.ial_class ||
-            (@story.previous_paragraph_style && @story.previous_paragraph_style.name.to_s =~ /^head\d+$/ && :para0) || \
+          style = if elem.ial_class
+            elem.ial_class
+          elsif (s = @story.previous_paragraph_style&.name&.to_s) && s =~ /^(section|head\d+)$/
+            :para0
+          else
             :para
+          end
           @story.paragraph(style) do
             convert_children(elem)
           end
