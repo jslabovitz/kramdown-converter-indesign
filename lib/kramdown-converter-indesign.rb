@@ -226,7 +226,13 @@ module Kramdown
       end
 
       def convert_hr(elem)
-        @story.paragraph(:section)
+        @story.paragraph(:section) do
+          @story << '*'
+          @story << :emsp
+          @story << '*'
+          @story << :emsp
+          @story << '*'
+        end
       end
 
       def convert_a(elem)
