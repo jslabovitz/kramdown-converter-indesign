@@ -3,10 +3,10 @@
 require 'kramdown-converter-indesign'
 require 'yaml'
 
-styles = {}
+styles = nil
 output = STDOUT
 
-while ARGV.first.start_with?('--')
+while ARGV.first&.start_with?('--')
   case (opt = ARGV.shift)
   when '--styles'
     styles = YAML.load(File.read(ARGV.shift))
@@ -18,5 +18,5 @@ while ARGV.first.start_with?('--')
 end
 
 output.write(
-  Kramdown::Converter::Indesign.convert_files(ARGV, styles)
+  Kramdown::Converter::Indesign.convert_files(ARGV, styles: styles)
 )

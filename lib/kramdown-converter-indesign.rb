@@ -10,153 +10,61 @@ module Kramdown
 
     class Indesign < Base
 
-      Environments = {
-
-        ROOT: {
-          head1: nil,
-          head2: nil,
-          head3: nil,
-          para: nil,
-          para0: :para,
-          section: nil,
-        },
-
-        blockquote: {
-          para: %i[ROOT para],
-          para0: :para,
-        },
-
-        verse: {
-          para: %i[ROOT para],
-        },
-
-        signature: {
-          para: %i[ROOT para],
-        },
-
-        dlist: {
-          item: %i[ROOT para0],
-        },
-
-        ulist: {
-          item: %i[ROOT para0],
-        },
-
-        olist: {
-          item: %i[ROOT para0],
-        },
-
-        footnote: {
-          para: %i[ROOT para],
-          para0: :para,
-        },
-
-        #FIXME
-        front: {
-          head1: nil,
-          head2: nil,
-          head3: nil,
-          para: nil,
-          para0: :para,
-          section: nil,
-        },
-
-        back: {
-          head1: nil,
-          head2: nil,
-          head3: nil,
-          para: nil,
-          para0: :para,
-          section: nil,
-        },
-
+      ParagraphStyles = {
+        head1: nil,
+        head2: nil,
+        head3: nil,
+        para: nil,
+        para0: { base: :para },
+        section: nil,
+        blockquote: nil,
+        verse: nil,
+        attribution: nil,
+        telegram: nil,
+        code: nil,
+        dl_item: nil,
+        ol_item: nil,
+        ul_item: nil,
       }
 
       CharacterStyles = {
         b: { FontStyle: 'Bold' },
-        i: { FontStyle: 'Italic' },
+        i: { FontStyle: 'Medium Italic' },
         sc: { Capitalization: 'CapToSmallCap' },
         frac: { OTFFraction: true },
         code: nil,  #FIXME: mono font
         footnote_ref: { Position: 'OTSuperscript' },
-        term: nil,
-        def: nil,
+        dt: nil,
+        dd: nil,
       }
 
       def self.convert_files(files, styles: nil)
         icml = nil
         files.each do |file|
           input = File.read(file)
-          if input.sub!(/^Environment:\s+(.*?)$/i, '')
-            environment_name = $1
-          else
-            environment_name = ''
-          end
           input.strip!
-          input += "\n\n" unless file == files[-1]
-          doc = Document.new(input,
-            indesign_icml: icml,
-            indesign_environment: environment_name)
-          icml = doc.to_indesign
+          input += "\n\n" unless file == files.last
+          begin
+            doc = Document.new(input, indesign_icml: icml)
+            icml = doc.to_indesign
+          rescue Error => e
+            raise Error, "#{file}: #{e}"
+          end
         end
         icml
       end
 
       def initialize(root, options)
         super
-        paragraph_styles = make_styles
         @style_set = InDesign::StyleSet.new(
-          paragraph_styles: paragraph_styles,
+          paragraph_styles: ParagraphStyles,
           character_styles: CharacterStyles)
-        if (name = options[:indesign_environment]) && !name.empty?
-          @environment = name.to_sym
-        else
-          @environment = :ROOT
-        end
         @base_icml = options[:indesign_icml]
         root.setup_tree
       end
 
-      def make_styles
-        styles = {}
-        Environments.each do |env_name, env_styles|
-          env_styles.each do |style_name, style|
-            full_name = full_style_name(env_name, style_name)
-            params = case style
-            when nil
-              {}
-            when Hash
-              style
-            when Array
-              { base: full_style_name(*style) }
-            when Symbol
-              { base: full_style_name(env_name, style) }
-            else
-              raise style.inspect
-            end
-            styles[full_name] = params
-          end
-        end
-        styles
-      end
-
-      def environment(name, &block)
-        previous = @environment
-        @environment = name
-        yield
-        @environment = previous
-      end
-
       def style(name)
-        @style_set.paragraph_style(full_style_name(@environment, name))
-      end
-
-      def full_style_name(environment, style)
-        if environment == :ROOT
-          style.to_s
-        else
-          [environment, style].join(' > ')
-        end
+        @style_set.paragraph_style(name)
       end
 
       def convert(elem, options={})
@@ -227,7 +135,7 @@ module Kramdown
       end
 
       def convert_blockquote(elem)
-        environment(elem.ial_class&.to_sym || :blockquote) do
+        @story.paragraph(elem.ial_class&.to_sym || :blockquote) do
           convert_children(elem)
         end
       end
@@ -239,7 +147,7 @@ module Kramdown
       end
 
       def convert_footnote_def(elem)
-        environment(:footnote) do
+        @story.paragraph(:footnote) do
           elem.children.each do |e|
             @story.paragraph do
               if e.is_first_child?
@@ -269,38 +177,43 @@ module Kramdown
         end
       end
 
-      def convert_ul(elem)
-        environment(:ulist) do
-          convert_children(elem)
+      def convert_codeblock(elem)
+        @story.break_line
+        @story.paragraph(elem.ial_class&.to_sym || :code) do
+          @story << elem.value
         end
       end
 
+      def convert_ul(elem)
+        @list_item_style = :ul_item
+        convert_children(elem)
+        @list_item_style = nil
+      end
+
       def convert_ol(elem)
-        environment(:olist) do
-          convert_children(elem)
-        end
+        @list_item_style = :ol_item
+        convert_children(elem)
+        @list_item_style = nil
       end
 
       def convert_li(elem)
         @story.break_line unless elem.is_first_child?
-        @story.paragraph(style(:item)) do
+        @story.paragraph(@list_item_style) do
           convert_children(elem)
         end
       end
 
       def convert_dl(elem)
-        environment(:dlist) do
-          0.step(to: elem.children.length - 1, by: 2) do |i|
-            dt, dd = elem.children[i], elem.children[i + 1]
-            @story.paragraph(style(:item)) do
-              @story.break_line unless dt.is_first_child?
-              @story.character(:term) do
-                convert_children(dt)
-              end
-              @story.add_tab
-              @story.character(:def) do
-                convert_children(dd)
-              end
+        0.step(to: elem.children.length - 1, by: 2) do |i|
+          dt, dd = elem.children[i], elem.children[i + 1]
+          @story.paragraph(style(:dl_item)) do
+            @story.break_line unless dt.is_first_child?
+            @story.character(:dt) do
+              convert_children(dt)
+            end
+            @story.add_tab
+            @story.character(:dd) do
+              convert_children(dd)
             end
           end
         end
