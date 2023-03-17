@@ -113,7 +113,7 @@ module Kramdown
       end
 
       def convert_header(elem)
-        style = :"head#{elem.options[:level]}"
+        style = elem.ial_class&.to_sym || :"head#{elem.options[:level]}"
         @story.paragraph(style) do
           convert_children(elem)
         end
