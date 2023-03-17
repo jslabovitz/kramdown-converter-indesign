@@ -16,3 +16,8 @@ Some verse:
 > And one man in his time plays many parts,\\
 > His Acts being seven ages.
 {:.verse}
+
+# A breaking header
+{:.head1_break}
+
+This should be on the next odd page.
