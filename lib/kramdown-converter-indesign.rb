@@ -16,6 +16,7 @@ module Kramdown
         head3: nil,
         para: nil,
         para0: { base: :para },
+        head1_break: { base: :head1, break_after: :next_odd_page },
         section: nil,
         blockquote: nil,
         verse: nil,
@@ -25,6 +26,8 @@ module Kramdown
         dl_item: nil,
         ol_item: nil,
         ul_item: nil,
+        footnote: nil,
+        footnote_ref: nil,
       }
 
       CharacterStyles = {
