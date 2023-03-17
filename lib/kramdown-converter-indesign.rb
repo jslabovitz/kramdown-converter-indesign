@@ -63,10 +63,6 @@ module Kramdown
         root.setup_tree
       end
 
-      def style(name)
-        @style_set.paragraph_style(name)
-      end
-
       def convert(elem, options={})
 # ;;puts elem
         method = "convert_#{elem.type}"
@@ -114,8 +110,8 @@ module Kramdown
       end
 
       def convert_header(elem)
-        style_name = :"head#{elem.options[:level]}"
-        @story.paragraph(style(style_name)) do
+        style = :"head#{elem.options[:level]}"
+        @story.paragraph(style) do
           convert_children(elem)
         end
       end
@@ -124,11 +120,11 @@ module Kramdown
         if elem.options[:transparent]
           convert_children(elem)
         else
-          style_name =
+          style =
             elem.ial_class ||
             (@story.previous_paragraph_style && @story.previous_paragraph_style.name.to_s =~ /^head\d+$/ && :para0) || \
             :para
-          @story.paragraph(style(style_name)) do
+          @story.paragraph(style) do
             convert_children(elem)
           end
         end
@@ -206,7 +202,7 @@ module Kramdown
       def convert_dl(elem)
         0.step(to: elem.children.length - 1, by: 2) do |i|
           dt, dd = elem.children[i], elem.children[i + 1]
-          @story.paragraph(style(:dl_item)) do
+          @story.paragraph(:dl_item) do
             @story.break_line unless dt.is_first_child?
             @story.character(:dt) do
               convert_children(dt)
@@ -224,7 +220,7 @@ module Kramdown
       end
 
       def convert_hr(elem)
-        @story.paragraph(style(:section))
+        @story.paragraph(:section)
       end
 
       def convert_a(elem)
